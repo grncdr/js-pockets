@@ -2,7 +2,7 @@
 
 Can't remember where you left something in your app? Check your pockets.
 
-**Warning**: `pockets` uses a lot of implicit magical behaviour. (In particular with regards to parsing function dependencies). Just warning you in case it turns you off.
+**Warning**: `pockets` uses a lot of implicit magical behaviour. (In particular with regards to parsing function dependencies). Just a warning in case that turns you off.
 
 ## Starting out with `pockets`
 
