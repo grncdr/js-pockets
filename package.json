@@ -1,0 +1,19 @@
+{
+  "name": "pockets",
+  "version": "0.0.0",
+  "description": "Implicit-magic asynchronous and nested DI containers",
+  "main": "index.js",
+  "dependencies": {
+    "bluebird": "^1.2.4",
+    "hat": "^0.0.3"
+  },
+  "devDependencies": {
+    "covert": "^0.4.0",
+    "blue-tape": "^0.1.6"
+  },
+  "scripts": {
+    "test": "covert test.js"
+  },
+  "author": "Stephen Sugden <me@stephensugden.com>",
+  "license": "MIT"
+}
