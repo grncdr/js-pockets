@@ -181,7 +181,7 @@ app.provider(function getResult (request) {
 var handler = createRequestHandler(app);
 ```
 
-`pocket.provider` behaves almost exactly like `pocket.value`, but extends the "only-once" behaviour of `.value` to "only-once-per-child". If a pocket *provides* a name, it does not *have* that name. Instead, it's children have it and the lazily computed value is cached by the specific child that the name was retrieved from. If your app will create child pockets in response to a repeated event (e.g. `'request'`) you can use providers to share behaviour across multiple repetitions of that event.
+`pocket.provider` behaves almost exactly like `pocket.value`, but extends the "only-once" behaviour of `.value` to "only-once-per-child". If a pocket *provides* a name, it does not *have* that name. Instead, it's children have it and the lazily computed value is cached by the specific child that the name was retrieved from. If your app will create child pockets in response to a repeated event (e.g. `'request'`) you can use providers and nested pockets to share behaviour and isolate data across multiple repetitions of that event.
 
 ## Using Node-style callback functions
 
