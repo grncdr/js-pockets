@@ -1,79 +1,90 @@
 var Promise = require('bluebird');
 var assert = require('assert');
-var p = require('./').pocket();
-var test = require('blue-tape');
-var provider = require('./provider');
+var pockets = require('./');
+var tape = require('blue-tape');
 
-test('p', function (t) {
-  var providerExecutionCount = 0;
-  var mySomething = {};
-
-  p.lazy(function getSomething () {
-    providerExecutionCount++;
-    return mySomething;
+function test (description, body) {
+  tape(description, function (t) {
+    return body.call(t, t, pockets.pocket());
   });
+}
 
-  t.test('.get', function (t) {
-    return Promise.join(
-      p.get('something').then(t.equal.bind(t, mySomething)),
-      p.get('missing').catch(t.pass.bind(t, 'missing dep returns error Promise'))
-    );
+test('.get', function (t, p) {
+  p.value('a', 1);
+  t.ok(Promise.is(p.get('a')), '.get returns a Promise');
+  return Promise.join(
+    p.get('a').then(t.equal.bind(t, 1)),
+    p.get('b').catch(t.pass.bind(t, 'missing dep returns error Promise'))
+  );
+});
+
+test('.run', function (t, p) {
+  p.value('something', 3);
+  return p.run(function (something) {
+    t.equal(something, 3);
   });
+});
 
-  t.test('.run', function (t) {
-    return p.run(function (something) {
-      t.equal(something, mySomething);
-    });
-  });
-
-  t.test('instance caching', function (t) {
-    t.equal(providerExecutionCount, 1);
+test('.value', function (t, p) {
+  t.test('.value type checking', function (t) {
+    t.throws(function () { p.value(function () {}); }, '.value requires a name');
+    t.throws(function () { p.value(5); }, '.value is picky');
     t.end();
   });
 
-  t.throws(function () {
-    p.lazy(function () {});
-  }, '.lazy requires a name');
-
-  t.test('.lazy accepts decorated functions', function (t) {
-    return p.pocket()
-      .lazy(provider('x', function () { return 1; }))
-      .get('x')
-      .then(t.equal.bind(t, 1));
-  });
-
-  t.test('.values', function (t) {
-    p.values({one: 1, two: 2});
-    return p.run(function (one, two) {
+  t.test('.value takes an object', function (t) {
+    return p.pocket().value({
+      one: 1,
+      two: 2,
+      three: function (one, two) { return one + two; }
+    }).run(function (one, two, three) {
       t.equal(1, one);
       t.equal(2, two);
-    });
-  });
-
-  t.test('.lazy accepts an object', function (t) {
-    return p.pocket().lazy({
-      three: function (one, two) { return one + two; },
-    }).get('three')
-      .then(t.equal.bind(t, 3));
-  });
-
-  t.test('.lazyNode', function (t) {
-    p.lazyNode(function getNodeStyle (callback) {
-      callback(null, 'Node Style');
-    });
-
-    return p.run(function (nodeStyle) {
-      t.equals(nodeStyle, 'Node Style');
+      t.equal(3, three);
     });
   });
 });
 
-test('parent/child relationships', function (t) {
+test('.nodeValue', function (t, p) {
+  p.nodeValue(function getNodeStyle (callback) {
+    callback(null, 'Node Style');
+  });
+
+  return p.run(function (nodeStyle) {
+    t.equals(nodeStyle, 'Node Style');
+  });
+});
+
+test('.missingNames', function (t, p) {
+  p.value(function thing (a, b) { });
+  t.deepEquals(['a', 'b'], p.missingNames());
+
+  p = p.pocket();
+  p.value('b', 2);
+  t.deepEquals(['a'], p.missingNames());
+  t.end();
+});
+
+test('value caching', function (t, p) {
+  var providerExecutionCount = 0;
+  var myThing = {};
+  p.value(function getThing () {
+    providerExecutionCount++;
+    return myThing;
+  });
+
+  return Promise.join(p.get('thing'), p.get('thing')).spread(function (a, b) {
+    t.equal(a, b);
+    t.equal(providerExecutionCount, 1);
+  });
+});
+
+test('parent/child relationships', function (t, p) {
   t.test('children can get deps from parent', function (t) {
     p.value('four', 4);
-    p.lazy(function getFive () { return 5; });
+    p.value(function getFive () { return 5; });
     var child = p.pocket();
-    child.lazy(function getTwenty (four, five) { return four * five; });
+    child.value(function getTwenty (four, five) { return four * five; });
     return child.get('twenty').then(t.equal.bind(t, 20));
   });
 
@@ -108,8 +119,8 @@ test('parent/child relationships', function (t) {
 
     var child1 = parent.pocket();
     var child2 = parent.pocket();
-    child1.lazy(function thing () { return 'thing from child 1'; });
-    child2.lazy(function thing () { return 'thing from child 2'; });
+    child1.value(function thing () { return 'thing from child 1'; });
+    child2.value(function thing () { return 'thing from child 2'; });
 
     return Promise.join(
       child1.get('providedValue'), child2.get('ProvidedValue')
@@ -119,40 +130,33 @@ test('parent/child relationships', function (t) {
     });
   });
 
-  t.end();
-});
-
-test('strict mode', function (t) {
-  var strictPocket = p.pocket(true);
-  t.throws(function () {
-    strictPocket.lazy(function x (dependsOnSomethingWeDontHave) {
+  t.test('.nodeProvider', function () {
+    var parent = p.pocket();
+    parent.nodeProvider(function getCheese (callback) {
+      callback(null, 'cheese');
     });
-  }, 'cannot register a function with missing dependencies');
+    var child = parent.pocket();
+    return child.get('cheese').then(t.equal.bind(t, 'cheese'));
+  });
 
-  t.throws(function () {
-    strictPocket.get('nonexistant thing');
-  }, "getting a dependency that doesn't exist throws");
-
-  strictPocket.provider(function providedValue (thing) {});
-  t.pass('Able to register provider with missing dependency');
   t.end();
 });
 
-test('overwrite protection', function (t) {
+test('overwrite protection', function (t, p) {
   var p1 = p.pocket();
   p1.value('one', 1);
   t.throws(function () {
-    p1.lazy(function one () {});
+    p1.value(function one () {});
   });
   var p2 = p.pocket();
-  p2.lazy(function one () {});
+  p2.value(function one () {});
   t.throws(function () {
     p1.value('one', 1);
   });
   t.end();
 });
 
-test('signature parsing', function (t) {
+test('signature parsing', function (t, p) {
   var parse = require('./signature');
   t.throws(function () {
     parse('blah');

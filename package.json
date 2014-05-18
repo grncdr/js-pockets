@@ -8,11 +8,12 @@
     "hat": "^0.0.3"
   },
   "devDependencies": {
+    "blue-tape": "^0.1.6",
     "covert": "^0.4.0",
-    "blue-tape": "^0.1.6"
+    "markdown-code-blocks": "0.0.1"
   },
   "scripts": {
-    "test": "covert test.js"
+    "test": "covert test.js && markdown-code-blocks -t javascript < README.md | node"
   },
   "author": "Stephen Sugden <me@stephensugden.com>",
   "license": "MIT"
