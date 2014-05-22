@@ -10,6 +10,7 @@ module.exports = (function pocket (parent) {
   // map of names to provider functions, these are only available to children of
   // this pocket.
   var providers = {};
+  var defaults = {};
   var allNames = {};
 
   function addNames (fn) {
@@ -45,8 +46,14 @@ module.exports = (function pocket (parent) {
         return values[name].nodeify(callback);
       }
 
-      if (lazy[name]) {
-        values[name] = self.run(lazy[name]).nodeify(callback);
+      var fn = lazy[name] || defaults[name];
+      if (typeof fn === 'function') {
+        values[name] = self.run(fn).nodeify(callback);
+        return values[name];
+      }
+      else if (fn !== void 0) {
+        // fn is a concrete default value
+        values[name] = Promise.cast(fn).nodeify(callback);
         return values[name];
       }
 
@@ -65,7 +72,6 @@ module.exports = (function pocket (parent) {
     },
 
     value: registrationFunction(function (name, value) {
-      name = canonicalize(name);
       if (values[name] || lazy[name]) {
         throw new TypeError('Cannot overwrite "' + name + '"');
       }
@@ -75,6 +81,17 @@ module.exports = (function pocket (parent) {
       } else {
         values[name] = Promise.cast(value);
       }
+      return self;
+    }),
+
+    default: registrationFunction(function (name, value) {
+      if (defaults[name]) {
+        throw new TypeError('Cannot overwrite default for "' + name + '"');
+      }
+      if (typeof value === 'function') {
+        addNames(value);
+      }
+      defaults[name] = value;
       return self;
     }),
 

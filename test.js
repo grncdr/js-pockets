@@ -144,6 +144,18 @@ test('parent/child relationships', function (t, p) {
   t.end();
 });
 
+test('default values', function (t, p) {
+  p.default('number', 1);
+  p.default('string', function () { return 'ok'; });
+  p.default('replaceMe', 'fail');
+  p.value('replaceMe', 'ok');
+  return Promise.join(
+    p.get('number').then(t.equal.bind(t, 1)),
+    p.get('string').then(t.equal.bind(t, 'ok')),
+    p.get('replaceMe').then(t.equal.bind(t, 'ok'))
+  );
+});
+
 test('overwrite protection', function (t, p) {
   var p1 = p.pocket();
   p1.value('one', 1);
@@ -154,6 +166,12 @@ test('overwrite protection', function (t, p) {
   p2.value(function one () {});
   t.throws(function () {
     p1.value('one', 1);
+  });
+
+  var p3 = p.pocket();
+  p3.default(function one () {});
+  t.throws(function () {
+    p3.default('one', 1);
   });
   t.end();
 });
