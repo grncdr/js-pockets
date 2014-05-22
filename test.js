@@ -14,7 +14,9 @@ test('.get', function (t, p) {
   t.ok(Promise.is(p.get('a')), '.get returns a Promise');
   return Promise.join(
     p.get('a').then(t.equal.bind(t, 1)),
-    p.get('b').catch(t.pass.bind(t, 'missing dep returns error Promise'))
+    p.get('b')
+     .then(t.fail.bind(t, 'Missing dep succeeded'))
+     .catch(t.pass.bind(t, 'missing dep returns error Promise'))
   );
 });
 
