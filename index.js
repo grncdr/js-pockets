@@ -67,7 +67,7 @@ module.exports = (function pocket (parent) {
         return values[name];
       }
 
-      var error = Error('No provider for "' + name + '"');
+      var error = new Error('No provider for "' + name + '"');
       return Promise.reject(error).nodeify(callback);
     },
 
