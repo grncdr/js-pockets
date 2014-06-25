@@ -154,7 +154,7 @@ function canonicalize (name) {
   if (!name || typeof name !== 'string') {
     throw new TypeError("Cannot canonicalize " + name);
   }
-  return name.toLowerCase().replace(/^create|^get|^load|\W/i, '');
+  return name.toLowerCase().replace(/^create|^get|^load|\W/gi, '');
 }
 
 function registrationFunction (wrapped) {
