@@ -109,7 +109,7 @@ test('parent/child relationships', function (t, p) {
       .then(t.equal.bind(t, 99));
   });
 
-  t.test('.provider', function () {
+  t.test('.provider', function (t) {
     var parent = p.pocket();
 
     parent.provider(function getProvidedValue (thing) {
@@ -132,7 +132,7 @@ test('parent/child relationships', function (t, p) {
     });
   });
 
-  t.test('.nodeProvider', function () {
+  t.test('.nodeProvider', function (t) {
     var parent = p.pocket();
     parent.nodeProvider(function getCheese (callback) {
       callback(null, 'cheese');
@@ -141,6 +141,25 @@ test('parent/child relationships', function (t, p) {
     return child.get('cheese').then(t.equal.bind(t, 'cheese'));
   });
 
+  t.end();
+});
+
+test('.provider takes an object', function (t, p) {
+  p.provider({
+    'the-first-value': function () {
+      return 3;
+    },
+    'The Second Value': function (theFirstValue) {
+      return theFirstValue + 81;
+    }
+  });
+  return p.pocket().get('the second value').then(t.equal.bind(t, 84));
+});
+
+test('.provider validates its argument', function (t, p) {
+  t.throws(function () {
+    p.provider({ x: 1 });
+  });
   t.end();
 });
 
