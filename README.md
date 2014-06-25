@@ -1,5 +1,7 @@
 # pockets
 
+![build-status](https://travis-ci.org/grncdr/js-pockets.svg?branch=master) _Builds don't pass without 100% test coverage_
+
 Can't remember where you left something in your app? Check your pockets.
 
 **Warning**: `pockets` uses a lot of implicit magical behaviour. (In particular with regards to parsing function dependencies). Just a warning in case that turns you off.
