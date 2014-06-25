@@ -100,6 +100,9 @@ module.exports = (function pocket (parent) {
     }),
 
     provider: registrationFunction(function (name, fn) {
+      if (typeof fn !== 'function') {
+        throw new TypeError('Provider for ' + name + ' is not a function');
+      }
       addNames(fn);
       providers[name] = fn;
       return self;
@@ -168,8 +171,7 @@ function registrationFunction (wrapped) {
         var self;
         var object = name;
         for (name in object) {
-          name = canonicalize(name);
-          self = wrapped(name, object[name]);
+          self = wrapped(canonicalize(name), object[name]);
         }
         return self;
     }
