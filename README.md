@@ -84,8 +84,6 @@ p.run(function (config, database) {
 
 You can think of `.run` as being a way to "enter" the pocket and `.then` as the way to bring a value back out with you.
 
-Many DI containers support "factories" that can return a new value every time something depends on them. `pockets` has a similar functionality in "providers", which will be explained later.
-
 ## Minimal Interface
 
 An important property of the `pockets` is that *none of the functions we're writing depend on it*.  They're just a normal functions that accept parameters and return a value or promise ([or take a callback][node-style]). In a larger application these functions would be defined in separate modules that can be tested in isolation without having to use `pockets` at all.
@@ -118,20 +116,39 @@ This can be particularly useful for implementing a "unit-of-work" pattern for we
 
 ## Sharing Behaviour Instead of Values: `.provider`
 
-As mentioned earlier, `pockets` doesn't have any way to define a "factory" that
-will provide a fresh value for a name each time that name is depended upon;
-values are *always* cached, and `pocket.get(name)` will always return the same
-value.
+Many DI containers support "factories" that can return a new value every time something depends on them. The caching behaviour of `pockets` resists this so it can maintain a strong invariant: `pocket.get(name)` will **always** return the same value.
 
-Instead `pockets` has a simple mechanism to control *where* the result of computing a particular name is cached. The `.provider` method behaves almost exactly like `.value`, but inverts the caching behaviour: the result of a `.value` function will be cached on the pocket where the value is _defined_, but a `.provider` result is cached on the pocket where the value is _accessed_.  Combining this with nested pockets let's us share the *definition* of a value across child pockets while keeping the computed *value* isolated.
+Instead `pockets` has a simple mechanism to control *where* the result of computing a particular name is cached. The `.provider` method behaves similarly to `.value` but inverts the caching behaviour: the result of a `.value` function will be cached on the pocket where the value is _defined_, while a `.provider` result is cached on the pocket where the value is _accessed_. Combining this with nested pockets let's us share the *definition* of a value across child pockets while keeping the computed *value* isolated.
+
+As an illustrative example, consider a web server implemented with a per-request pocket. We can share the behaviour of looking up a users session across all requests by using a provider:
+
+```javascript
+var app = pocket();
+
+app.provider('session', getSession);
+
+// getSession can easily be defined and tested in a separate module
+function getSession (request, sessionStorage) {
+  return sessionStorage.getSessionForRequest(request);
+}
+
+function handleRequest (req, res) {
+  var context = app.pocket().value('request', req);
+
+  context.run(function (session, res) {
+    // session here will be the result of getSession(req, sessionStorage)
+    res.end('Hello valued customer: ' + session.userId);
+  });
+}
+```
 
 ## Using Node-style callback functions
 
 If you're not a fan of promises, all of the asynchronous parts of `pockets` also support node-style callbacks. For example, you can pass a callback to `.get` or `.run`, and you can register lazy values with node-style callbacks using `.nodeValue`:
 
 ```javascript
-p.nodeValue(function getCurrentUser (sessionData, userModel, callback) {
-  userModel.findById(sessionData.userId, callback);
+p.nodeValue('currentUser', function (session, Users, callback) {
+  Users.findById(session.userId, callback);
 });
 ```
 
