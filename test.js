@@ -1,11 +1,10 @@
 var Promise = require('bluebird');
-var assert = require('assert');
-var pockets = require('./');
+var pocket = require('./');
 var tape = require('blue-tape');
 
 function test (description, body) {
   tape(description, function (t) {
-    return body.call(t, t, pockets.pocket());
+    return body.call(t, t, pocket());
   });
 }
 
@@ -29,7 +28,8 @@ test('.run', function (t, p) {
 
 test('.value', function (t, p) {
   t.test('.value type checking', function (t) {
-    t.throws(function () { p.value(function () {}); }, '.value requires a name');
+    t.throws(function () { p.value(function () {}); },
+             '.value requires a name');
     t.throws(function () { p.value(5); }, '.value is picky');
     t.end();
   });
@@ -85,6 +85,7 @@ test('parent/child relationships', function (t, p) {
   t.test('children can get deps from parent', function (t) {
     p.value('four', 4);
     p.value(function getFive () { return 5; });
+
     var child = p.pocket();
     child.value(function getTwenty (four, five) { return four * five; });
     return child.get('twenty').then(t.equal.bind(t, 20));
@@ -94,54 +95,54 @@ test('parent/child relationships', function (t, p) {
     t.assert(!p.has('twenty'));
     t.end();
   });
+});
 
-  t.test('granchildren can get deps from their grandparents', function (t) {
-    var parent = p.pocket();
-    var child = parent.pocket();
-    return child.get('five').then(t.equal.bind(t, 5));
+test('granchildren can get deps from their grandparents', function (t, gp) {
+  gp.provider('five', function () { return 5 });
+  var parent = gp.pocket();
+  var child = parent.pocket();
+  t.ok(child.has('five'), 'Children "have" deps that grandparents "provide"');
+  return child.get('five').then(t.equal.bind(t, 5));
+});
+
+test('.alias', function (t, p) {
+  return p.pocket()
+    .value('src', 99)
+    .alias('al', 'src')
+    .get('al')
+    .then(t.equal.bind(t, 99));
+});
+
+test('.provider', function (t, p) {
+  var parent = p.pocket();
+
+  parent.provider(function getProvidedValue (childValue) {
+    return 'ProvidedValue == ' + childValue;
   });
 
-  t.test('.alias', function (t) {
-    return p.pocket()
-      .value('src', 99)
-      .alias('al', 'src')
-      .get('al')
-      .then(t.equal.bind(t, 99));
+  t.ok(!parent.has('thing'),
+       'parents do not "have" the names they "provide" for children');
+
+  var child1 = parent.pocket();
+  var child2 = parent.pocket();
+  child1.value('childValue', function () { return 'child 1'; });
+  child2.value('childValue', function () { return 'child 2'; });
+
+  return Promise.join(
+    child1.get('providedValue'), child2.get('ProvidedValue')
+  ).spread(function (value1, value2) {
+    t.equal('ProvidedValue == child 1', value1);
+    t.equal('ProvidedValue == child 2', value2);
   });
+});
 
-  t.test('.provider', function (t) {
-    var parent = p.pocket();
-
-    parent.provider(function getProvidedValue (thing) {
-      return 'Parent received ' + thing;
-    });
-
-    t.ok(!parent.has('thing'),
-         'parents do not "have" the names they "provider" for children');
-
-    var child1 = parent.pocket();
-    var child2 = parent.pocket();
-    child1.value(function thing () { return 'thing from child 1'; });
-    child2.value(function thing () { return 'thing from child 2'; });
-
-    return Promise.join(
-      child1.get('providedValue'), child2.get('ProvidedValue')
-    ).spread(function (value1, value2) {
-      t.equal('Parent received thing from child 1', value1);
-      t.equal('Parent received thing from child 2', value2);
-    });
+test('.nodeProvider', function (t, p) {
+  var parent = p.pocket();
+  parent.nodeProvider(function getCheese (callback) {
+    callback(null, 'cheese');
   });
-
-  t.test('.nodeProvider', function (t) {
-    var parent = p.pocket();
-    parent.nodeProvider(function getCheese (callback) {
-      callback(null, 'cheese');
-    });
-    var child = parent.pocket();
-    return child.get('cheese').then(t.equal.bind(t, 'cheese'));
-  });
-
-  t.end();
+  var child = parent.pocket();
+  return child.get('cheese').then(t.equal.bind(t, 'cheese'));
 });
 
 test('.provider takes an object', function (t, p) {
@@ -195,7 +196,7 @@ test('overwrite protection', function (t, p) {
   t.end();
 });
 
-test('signature parsing', function (t, p) {
+test('signature parsing', function (t) {
   var parse = require('./signature');
   t.throws(function () {
     parse('blah');

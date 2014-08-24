@@ -1,14 +1,19 @@
+'use strict';
 var Promise = require('bluebird');
 var parseSignature = require('./signature');
 
-module.exports = (function pocket (parent) {
+module.exports = function createPocket () {
+  return pocket();
+};
+
+function pocket (parent) {
   // mapping of names to lazy value functions, these functions may return
   // synchronously or return a Promise
   var lazy = {};
   // mapping of names to resolved values, wrapped in Promises.
   var values = {};
-  // map of names to provider functions, these are only available to children of
-  // this pocket.
+  // map of names to provider functions, these are only available to children
+  // of this pocket.
   var providers = {};
   var defaults = {};
   var allNames = {};
@@ -20,7 +25,7 @@ module.exports = (function pocket (parent) {
   }
 
   var self = {
-    pocket: function (addStrict) {
+    pocket: function () {
       return pocket(self);
     },
 
@@ -61,7 +66,7 @@ module.exports = (function pocket (parent) {
         return parent.get(name, callback);
       }
 
-      var provider = parent.getProvider(name);
+      var provider = parent && parent.getProvider(name);
       if (provider) {
         values[name] = Promise.cast(self.run(provider)).nodeify(callback);
         return values[name];
@@ -123,7 +128,8 @@ module.exports = (function pocket (parent) {
 
     has: function (name) {
       name = canonicalize(name);
-      return Boolean(self.hasValue(name) || (parent && parent.getProvider(name)));
+      return Boolean(self.hasValue(name) ||
+                     (parent && parent.getProvider(name)));
     },
 
     hasValue: function (name) {
@@ -148,7 +154,7 @@ module.exports = (function pocket (parent) {
   };
 
   return self;
-})();
+}
 
 function canonicalize (name) {
   if (!name || typeof name !== 'string') {
@@ -163,7 +169,7 @@ function registrationFunction (wrapped) {
       case 'function':
         fn = name;
         name = fn.name;
-        // intentional fallthrough
+        /* falls through */
       case 'string':
         name = canonicalize(name);
         return wrapped(name, fn);
