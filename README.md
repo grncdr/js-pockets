@@ -27,10 +27,10 @@ p.value('config', { db: 'sqlite3://:memory:' });
 ```javascript
 p.get('config').then(function (config) {
   assert.deepEqual(config, { db: 'sqlite3://:memory:' })
-}).done();
+});
 ```
 
-As you might have noticed, `.get` returns a [promise][bluebird]. It can also be supplied with a [node-style callback][node-style]:
+As you might have noticed, `.get` returns a promise. It can also be supplied with a [node-style callback][node-style]:
 
 ```javascript
 p.get('config', function (err, config) {
@@ -48,7 +48,7 @@ p.value('database', function (config) {
 
 p.get('database').then(function (db) {
   assert.equal(db.url, 'sqlite3://:memory:');
-}).done();
+});
 ```
 
 This also shows the first bit of implicit behaviour: when we call `p.get('database')`, the pocket will see that the function requires a parameter named `config`, and passes the resolved value of `pocket.get('config')`.
@@ -58,7 +58,7 @@ This also shows the first bit of implicit behaviour: when we call `p.get('databa
 Values created by lazy functions are cached, so the function will only be evaluated once. Consider this example:
 
 ```javascript
-var Promise = require('bluebird');
+var apply = require('lie-apply');
 
 var invocationCount = 0;
 p.value('sideEffectingValue', function () {
@@ -66,10 +66,12 @@ p.value('sideEffectingValue', function () {
   return {value: invocationCount};
 });
 
-Promise.join(p.get('sideEffectingValue'), p.get('sideEffectingValue')).spread(function (v1, v2) {
+apply(assertions, p.get('sideEffectingValue'), p.get('sideEffectingValue'));
+
+function assertions (v1, v2) {
   assert.strictEqual(v1, v2); // These are the exact same object.
   assert.strictEqual(invocationCount, 1);
-}).done();
+}
 ```
 
 If you want to evaluate code that depends on lazy values without caching the result, use `pocket.run`:
@@ -77,7 +79,7 @@ If you want to evaluate code that depends on lazy values without caching the res
 ```javascript
 p.run(function (config, database) {
   return config.db === database.url;
-}).then(assert).done();
+}).then(assert);
 ```
 
 You can think of `.run` as being a way to "enter" the pocket and `.then` as the way to bring a value back out with you.
@@ -99,7 +101,7 @@ var parent = pocket();
 var child = parent.pocket();
 
 parent.value('one', 1);
-child.get('one').then(assert.equal.bind(null, 1)).done();
+child.get('one').then(assert.equal.bind(null, 1));
 ```
 
 This indirect dependency resolution is one-way, allowing you to create isolated scopes:
@@ -169,6 +171,5 @@ I got the idea for `pockets` from talking to @ehd about different ways of doing 
 MIT
 
 
-[bluebird]: https://github.com/petkaantanov/bluebird/blob/master/API.md
 [node-style]: #using-node-style-callback-functions
 [canonicalized]: #canonicalization

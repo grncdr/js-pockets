@@ -4,12 +4,15 @@
   "description": "Implicit-magic asynchronous and nested DI containers",
   "main": "index.js",
   "dependencies": {
-    "bluebird": "^1.2.4",
-    "hat": "^0.0.3"
+    "hat": "^0.0.3",
+    "lie": "^2.7.7",
+    "lie-cast": "^0.2.1",
+    "lie-denodify": "^0.3.0"
   },
   "devDependencies": {
     "blue-tape": "^0.1.6",
     "covert": "^0.4.0",
+    "lie-apply": "^0.1.0",
     "markdown-code-blocks": "0.0.1"
   },
   "scripts": {

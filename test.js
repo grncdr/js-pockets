@@ -1,4 +1,6 @@
-var Promise = require('bluebird');
+var Promise = require('lie');
+var apply = require('lie-apply');
+var cast = require('lie-cast');
 var pocket = require('./');
 var tape = require('blue-tape');
 
@@ -10,13 +12,34 @@ function test (description, body) {
 
 test('.get', function (t, p) {
   p.value('a', 1);
-  t.ok(Promise.is(p.get('a')), '.get returns a Promise');
-  return Promise.join(
+  t.strictEqual(p.get('a'), cast(p.get('a')), '.get returns a Promise');
+  return join(
     p.get('a').then(t.equal.bind(t, 1)),
     p.get('b')
      .then(t.fail.bind(t, 'Missing dep succeeded'))
      .catch(t.pass.bind(t, 'missing dep returns error Promise'))
   );
+});
+
+test('.get(name, callback)', function (t, p) {
+  p.value('a', 1);
+  return new Promise(function (resolve) {
+    p.get('a', function (err, value) {
+      t.equal(err, null);
+      t.equal(1, value);
+      resolve();
+    });
+  });
+});
+
+test('.get(name, callback) with error', function (t, p) {
+  return new Promise(function (resolve) {
+    p.get('a', function (err) {
+      t.ok(err);
+      t.equal(1, arguments.length);
+      resolve();
+    });
+  });
 });
 
 test('.run', function (t, p) {
@@ -75,10 +98,11 @@ test('value caching', function (t, p) {
     return myThing;
   });
 
-  return Promise.join(p.get('thing'), p.get('thing')).spread(function (a, b) {
+  return apply(assertions, p.get('thing'), p.get('thing'));
+  function assertions (a, b) {
     t.equal(a, b);
     t.equal(providerExecutionCount, 1);
-  });
+  }
 });
 
 test('parent/child relationships', function (t, p) {
@@ -128,12 +152,14 @@ test('.provider', function (t, p) {
   child1.value('childValue', function () { return 'child 1'; });
   child2.value('childValue', function () { return 'child 2'; });
 
-  return Promise.join(
-    child1.get('providedValue'), child2.get('ProvidedValue')
-  ).spread(function (value1, value2) {
+  return apply(assertions,
+               child1.get('providedValue'),
+               child2.get('ProvidedValue'));
+
+  function assertions (value1, value2) {
     t.equal('ProvidedValue == child 1', value1);
     t.equal('ProvidedValue == child 2', value2);
-  });
+  }
 });
 
 test('.nodeProvider', function (t, p) {
@@ -169,7 +195,7 @@ test('default values', function (t, p) {
   p.default('string', function () { return 'ok'; });
   p.default('replaceMe', 'fail');
   p.value('replaceMe', 'ok');
-  return Promise.join(
+  return join(
     p.get('number').then(t.equal.bind(t, 1)),
     p.get('string').then(t.equal.bind(t, 'ok')),
     p.get('replaceMe').then(t.equal.bind(t, 'ok'))
@@ -203,3 +229,8 @@ test('signature parsing', function (t) {
   }, 'Can only parse functions');
   t.end();
 });
+
+function join () {
+  var args = Array.prototype.slice.call(arguments);
+  return Promise.all(args);
+}

@@ -1,5 +1,7 @@
 'use strict';
-var Promise = require('bluebird');
+var Promise = require('lie');
+var cast = require('lie-cast');
+var denodify = require('lie-denodify');
 var parseSignature = require('./signature');
 
 module.exports = function createPocket () {
@@ -31,7 +33,9 @@ function pocket (parent) {
 
     run: function (fn, callback) {
       var params = parseSignature(fn).map(self.get);
-      return Promise.all(params).spread(fn.bind(self)).nodeify(callback);
+      return nodify(callback, Promise.all(params).then(function (params) {
+        return fn.apply(self, params);
+      }));
     },
 
     /**
@@ -48,17 +52,17 @@ function pocket (parent) {
       }
       name = canonicalize(name);
       if (values[name] !== void 0) {
-        return values[name].nodeify(callback);
+        return nodify(callback, values[name]);
       }
 
       var fn = lazy[name] || defaults[name];
       if (typeof fn === 'function') {
-        values[name] = self.run(fn).nodeify(callback);
+        values[name] = nodify(callback, self.run(fn));
         return values[name];
       }
       else if (fn !== void 0) {
         // fn is a concrete default value
-        values[name] = Promise.cast(fn).nodeify(callback);
+        values[name] = nodify(callback, cast(fn));
         return values[name];
       }
 
@@ -68,12 +72,12 @@ function pocket (parent) {
 
       var provider = parent && parent.getProvider(name);
       if (provider) {
-        values[name] = Promise.cast(self.run(provider)).nodeify(callback);
+        values[name] = nodify(callback, cast(self.run(provider)));
         return values[name];
       }
 
       var error = new Error('No provider for "' + name + '"');
-      return Promise.reject(error).nodeify(callback);
+      return nodify(callback, Promise.reject(error));
     },
 
     value: registrationFunction(function (name, value) {
@@ -84,7 +88,7 @@ function pocket (parent) {
         addNames(value);
         lazy[name] = value;
       } else {
-        values[name] = Promise.cast(value);
+        values[name] = cast(value);
       }
       return self;
     }),
@@ -189,7 +193,7 @@ function registrationFunction (wrapped) {
 function promisify (fn) {
   var signature = parseSignature(fn).slice();
   signature.pop();
-  fn = Promise.promisify(fn);
+  fn = denodify(fn);
   parseSignature.clobber(fn, signature);
   return fn;
 }
@@ -198,4 +202,11 @@ function not (fn) {
   return function (it) {
     return !fn(it);
   };
+}
+
+function nodify (callback, p) {
+  return !callback ? p : p.then(
+    function (val) { callback(null, val); return val; },
+    function (err) { callback(err); }
+  );
 }
