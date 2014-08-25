@@ -14,9 +14,6 @@ function pocket (parent) {
   var lazy = {};
   // mapping of names to resolved values, wrapped in Promises.
   var values = {};
-  // map of names to provider functions, these are only available to children
-  // of this pocket.
-  var providers = {};
   var defaults = {};
   var allNames = {};
 
@@ -43,7 +40,6 @@ function pocket (parent) {
      *
      *  1. local (lazy) value
      *  2. parent (lazy) value
-     *  3. parent provider
      */
     get: function (name, callback) {
       if (typeof callback === 'number') {
@@ -66,14 +62,8 @@ function pocket (parent) {
         return values[name];
       }
 
-      if (parent && parent.hasValue(name)) {
+      if (parent && parent.has(name)) {
         return parent.get(name, callback);
-      }
-
-      var provider = parent && parent.getProvider(name);
-      if (provider) {
-        values[name] = nodify(callback, cast(self.run(provider)));
-        return values[name];
       }
 
       var error = new Error('No provider for "' + name + '"');
@@ -108,22 +98,6 @@ function pocket (parent) {
       return self.value(name, promisify(fn));
     }),
 
-    provider: registrationFunction(function (name, fn) {
-      if (typeof fn !== 'function') {
-        throw new TypeError('Provider for ' + name + ' is not a function');
-      }
-      addNames(fn);
-      providers[name] = fn;
-      return self;
-    }),
-
-    nodeProvider: registrationFunction(function (name, fn) {
-      fn = promisify(fn);
-      addNames(fn);
-      providers[name] = fn;
-      return self;
-    }),
-
     alias: function (alias, source) {
       return self.value(alias, function () { return self.get(source); });
     },
@@ -132,22 +106,12 @@ function pocket (parent) {
 
     has: function (name) {
       name = canonicalize(name);
-      return Boolean(self.hasValue(name) ||
-                     (parent && parent.getProvider(name)));
-    },
-
-    hasValue: function (name) {
-      name = canonicalize(name);
       return Boolean(
-        (values[name] !== void 0) ||
+        (name in values) ||
+        (name in defaults) ||
         lazy[name] ||
-        (parent && parent.hasValue(name))
+        (parent && parent.has(name))
       );
-    },
-
-    getProvider: function (name) {
-      name = canonicalize(name);
-      return providers[name] || (parent && parent.getProvider(name));
     },
 
     missingNames: function () {

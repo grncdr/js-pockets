@@ -122,7 +122,7 @@ test('parent/child relationships', function (t, p) {
 });
 
 test('granchildren can get deps from their grandparents', function (t, gp) {
-  gp.provider('five', function () { return 5 });
+  gp.value('five', function () { return 5 });
   var parent = gp.pocket();
   var child = parent.pocket();
   t.ok(child.has('five'), 'Children "have" deps that grandparents "provide"');
@@ -137,58 +137,14 @@ test('.alias', function (t, p) {
     .then(t.equal.bind(t, 99));
 });
 
-test('.provider', function (t, p) {
-  var parent = p.pocket();
-
-  parent.provider(function getProvidedValue (childValue) {
-    return 'ProvidedValue == ' + childValue;
-  });
-
-  t.ok(!parent.has('thing'),
-       'parents do not "have" the names they "provide" for children');
-
-  var child1 = parent.pocket();
-  var child2 = parent.pocket();
-  child1.value('childValue', function () { return 'child 1'; });
-  child2.value('childValue', function () { return 'child 2'; });
-
-  return apply(assertions,
-               child1.get('providedValue'),
-               child2.get('ProvidedValue'));
-
-  function assertions (value1, value2) {
-    t.equal('ProvidedValue == child 1', value1);
-    t.equal('ProvidedValue == child 2', value2);
-  }
-});
-
-test('.nodeProvider', function (t, p) {
-  var parent = p.pocket();
-  parent.nodeProvider(function getCheese (callback) {
-    callback(null, 'cheese');
-  });
-  var child = parent.pocket();
-  return child.get('cheese').then(t.equal.bind(t, 'cheese'));
-});
-
-test('.provider takes an object', function (t, p) {
-  p.provider({
-    'the-first-value': function () {
-      return 3;
-    },
-    'The Second Value': function (theFirstValue) {
-      return theFirstValue + 81;
-    }
-  });
-  return p.pocket().get('the second value').then(t.equal.bind(t, 84));
-});
-
+/*
 test('.provider validates its argument', function (t, p) {
   t.throws(function () {
     p.provider({ x: 1 });
   });
   t.end();
 });
+*/
 
 test('default values', function (t, p) {
   p.default('number', 1);

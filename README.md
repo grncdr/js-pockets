@@ -1,14 +1,15 @@
 # pockets
 
-![build-status](https://travis-ci.org/grncdr/js-pockets.svg?branch=master) _Builds don't pass without 100% test coverage_
+![build-status](https://travis-ci.org/grncdr/js-pockets.svg?branch=master)
+_Builds don't pass without 100% test coverage_
 
 Can't remember where you left something in your app? Check your pockets.
 
-**Warning**: `pockets` uses a lot of implicit magical behaviour. (In particular with regards to parsing function dependencies). Just a warning in case that turns you off.
+**Warning**: `pockets` implements magical implicit behaviour by parsing function arguments. Just in case that turns you off.
 
-## Starting Out With `pockets`
+## Synopsis
 
-A `pocket` is created with by calling `pockets.pocket()`:
+Pockets hold named values, which may be computed asynchronously. New pockets are created by calling `pocket()`:
 
 ```javascript
 var assert = require('assert');
@@ -16,7 +17,7 @@ var pocket = require('./');
 var p = pocket();
 ```
 
-You can put things into the pocket using `.value`:
+You put values into the pocket using `.value`:
 
 ```javascript
 p.value('config', { db: 'sqlite3://:memory:' });
@@ -51,7 +52,7 @@ p.get('database').then(function (db) {
 });
 ```
 
-This also shows the first bit of implicit behaviour: when we call `p.get('database')`, the pocket will see that the function requires a parameter named `config`, and passes the resolved value of `pocket.get('config')`.
+This also shows the first bit of implicit behaviour: when we call `p.get('database')`, the pocket will see that the function requires a parameter named `config`, and passes the resolved value of `pocket.get('config')` to our function.
 
 ## Result Caching
 
@@ -61,6 +62,7 @@ Values created by lazy functions are cached, so the function will only be evalua
 var apply = require('lie-apply');
 
 var invocationCount = 0;
+
 p.value('sideEffectingValue', function () {
   invocationCount++;
   return {value: invocationCount};
@@ -86,7 +88,7 @@ You can think of `.run` as being a way to "enter" the pocket and `.then` as the 
 
 ## Minimal Interface
 
-An important property of the `pockets` is that *none of the functions we're writing depend on it*.  They're just a normal functions that accept parameters and return a value or promise ([or take a callback][node-style]). In a larger application these functions would be defined in separate modules that can be tested in isolation without having to use `pockets` at all.
+An important property of `pockets` is that *none of the functions we're writing depend on them*.  They're just a normal functions that accept parameters and return a value or promise ([or take a callback][node-style]). In a larger application these functions would be defined in separate modules that can be tested in isolation without having to use `pockets` at all.
 
 Furthermore, we write very little `.then(...)` or callback boilerplate in our functions, because `pockets` takes care of sequencing the dependencies for us.
 
@@ -114,34 +116,6 @@ parent.get('two').catch(function (err) {
 
 This can be particularly useful for implementing a "unit-of-work" pattern for web servers, where every request can have an isolated `pocket` that extends an application-wide pocket with request-specific data.
 
-## Sharing Behaviour Instead of Values: `.provider`
-
-Many DI containers support "factories" that can return a new value every time something depends on them. The caching behaviour of `pockets` resists this so it can maintain a strong invariant: `pocket.get(name)` will **always** return the same value.
-
-Instead `pockets` has a simple mechanism to control *where* the result of computing a particular name is cached. The `.provider` method behaves similarly to `.value` but inverts the caching behaviour: the result of a `.value` function will be cached on the pocket where the value is _defined_, while a `.provider` result is cached on the pocket where the value is _accessed_. Combining this with nested pockets let's us share the *definition* of a value across child pockets while keeping the computed *value* isolated.
-
-As an illustrative example, consider a web server implemented with a per-request pocket. We can share the behaviour of looking up a users session across all requests by using a provider:
-
-```javascript
-var app = pocket();
-
-app.provider('session', getSession);
-
-// getSession can easily be defined and tested in a separate module
-function getSession (request, sessionStorage) {
-  return sessionStorage.getSessionForRequest(request);
-}
-
-function handleRequest (req, res) {
-  var context = app.pocket().value('request', req);
-
-  context.run(function (session, res) {
-    // session here will be the result of getSession(req, sessionStorage)
-    res.end('Hello valued customer: ' + session.userId);
-  });
-}
-```
-
 ## Using Node-style callback functions
 
 If you're not a fan of promises, all of the asynchronous parts of `pockets` also support node-style callbacks. For example, you can pass a callback to `.get` or `.run`, and you can register lazy values with node-style callbacks using `.nodeValue`:
@@ -152,7 +126,7 @@ p.nodeValue('currentUser', function (session, Users, callback) {
 });
 ```
 
-In the above example the `sessionData` and `userModel` parameters will be resolved by the `pocket` and the error or value provided to the callback will be used to resolve the value for `currentUser`.
+In the above example the `sessionData` and `userModel` parameters will be resolved by the `pocket` and the error or value passed to the callback will be used to resolve the value for `currentUser`.
 
 ## Experimental Magic: Function Names as Value Names
 
@@ -186,7 +160,6 @@ I got the idea for `pockets` from talking to @ehd about different ways of doing 
 ## License
 
 MIT
-
 
 [node-style]: #using-node-style-callback-functions
 [canonicalized]: #canonicalization
