@@ -73,10 +73,10 @@ test('.value', function (t, p) {
 test('.wrap', function (t, p) {
   p.value('theValue', 3);
   p.value('multiplier', 2);
-  p.wrap('theValue', function (original, multiplier) {
-    t.equal(original, 3);
+  p.wrap('theValue', function (theValue, multiplier) {
+    t.equal(theValue, 3);
     t.equal(multiplier, 2);
-    return original * multiplier;
+    return theValue * multiplier;
   });
   return p.get('theValue').then(t.equal.bind(t, 6));
 });
@@ -84,12 +84,23 @@ test('.wrap', function (t, p) {
 test('.wrap works on lazy values', function (t, p) {
   p.value('theValue', function () { return 8; });
   p.value('multiplier', function () { return 3; });
-  p.wrap('theValue', function (original, multiplier) {
-    t.equal(original, 8);
+  p.wrap('theValue', function (theValue, multiplier) {
+    t.equal(theValue, 8);
     t.equal(multiplier, 3);
-    return original * multiplier;
+    return theValue * multiplier;
   });
   return p.get('theValue').then(t.equal.bind(t, 24));
+});
+
+test('.wrap can be stacked', function (t, p) {
+  p.value('theValue', function () { return 0; });
+  p.wrap('theValue', function (theValue) {
+    return theValue + 1;
+  });
+  p.wrap('theValue', function (theValue) {
+    return theValue + 1;
+  });
+  return p.get('theValue').then(t.equal.bind(t, 2));
 });
 
 test('.wrap validates arguments', function (t, p) {
