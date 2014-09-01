@@ -70,6 +70,45 @@ test('.value', function (t, p) {
   });
 });
 
+test('.wrap', function (t, p) {
+  p.value('theValue', 3);
+  p.value('multiplier', 2);
+  p.wrap('theValue', function (original, multiplier) {
+    t.equal(original, 3);
+    t.equal(multiplier, 2);
+    return original * multiplier;
+  });
+  return p.get('theValue').then(t.equal.bind(t, 6));
+});
+
+test('.wrap works on lazy values', function (t, p) {
+  p.value('theValue', function () { return 8; });
+  p.value('multiplier', function () { return 3; });
+  p.wrap('theValue', function (original, multiplier) {
+    t.equal(original, 8);
+    t.equal(multiplier, 3);
+    return original * multiplier;
+  });
+  return p.get('theValue').then(t.equal.bind(t, 24));
+});
+
+test('.wrap validates arguments', function (t, p) {
+  p.value('theValue', 3);
+  p.value('multiplier', 2);
+  t.throws(function () {
+    p.wrap('theValue', 'tortilla');
+  }, 'wrapper function must be a function');
+
+  t.throws(function () {
+    p.wrap('someOtherValue', function (original) {});
+  }, 'wrapper must wrap a known name');
+
+  t.throws(function () {
+    p.wrap('theValue', function () {});
+  }, 'wrapper must depend on "original"');
+  t.end();
+});
+
 test('.nodeValue', function (t, p) {
   p.nodeValue(function getNodeStyle (callback) {
     callback(null, 'Node Style');
@@ -137,16 +176,7 @@ test('.alias', function (t, p) {
     .then(t.equal.bind(t, 99));
 });
 
-/*
-test('.provider validates its argument', function (t, p) {
-  t.throws(function () {
-    p.provider({ x: 1 });
-  });
-  t.end();
-});
-*/
-
-test('default values', function (t, p) {
+test('.default', function (t, p) {
   p.default('number', 1);
   p.default('string', function () { return 'ok'; });
   p.default('replaceMe', 'fail');
