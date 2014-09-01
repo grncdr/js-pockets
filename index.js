@@ -84,40 +84,41 @@ function pocket (parent) {
     }),
 
     wrap: registrationFunction(function (name, fn) {
-      if (values[name]) {
-        throw new TypeError('Cannot wrap a realized value');
-      }
       if (typeof fn !== 'function') {
         throw new TypeError('Cannot wrap "' + name + '", wrapper is not a function');
       }
-      var original = lazy[name] || defaults[name];
+
+      var original = values[name] || lazy[name] || defaults[name];
       if (original === void 0) {
         throw new TypeError('Cannot wrap undefined value "' + name + '"');
       }
 
-      var signature = parseSignature(fn).slice();
-      var position = signature.indexOf('original');
+      var signature = parseSignature(fn).map(canonicalize);
+      var position = signature.indexOf(name);
       if (position < 0) {
-        throw new Error('Wrapper must depend on an "original" value');
+        throw new Error('Wrapper must depend on original "' + name + '" value');
       }
 
       function wrapper () {
         var args = Array.prototype.slice.call(arguments);
+
         if (typeof original === 'function') {
           original = self.run(original);
         } else {
           original = cast(original);
         }
         
-        return original.then(function (original) {
-          args.splice(0, position, original);
+        return original.then(function (wrapped) {
+          args.splice(0, position, wrapped);
+          return fn.apply(this, args);
         });
       }
 
-      parseSignature.clobber(wrapper, signature.filter(function (name) {
-        return name !== 'original';
+      parseSignature.clobber(wrapper, signature.filter(function (name_) {
+        return name_ !== name;
       }));
 
+      delete values[name];
       lazy[name] = wrapper;
 
       return self;
