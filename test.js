@@ -123,9 +123,9 @@ test('.missingNames', function (t, p) {
   p.value(function thing (a, b) { });
   t.deepEquals(['a', 'b'], p.missingNames());
 
-  p = p.pocket();
+  var child = p.pocket();
   p.value('b', 2);
-  t.deepEquals(['a'], p.missingNames());
+  t.deepEquals(['a'], child.missingNames());
   t.end();
 });
 
