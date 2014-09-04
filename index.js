@@ -102,13 +102,14 @@ function pocket (parent) {
       function wrapper () {
         var args = Array.prototype.slice.call(arguments);
 
+        var thunk;
         if (typeof original === 'function') {
-          original = self.run.bind(self, original);
+          thunk = function () { return self.run(original) };
         } else {
-          original = function () { return cast(original) };
+          thunk = function () { return cast(original); };
         }
         
-        args.splice(0, position, wrapped);
+        args.splice(0, position, thunk);
         return fn.apply(this, args);
       }
 

@@ -74,10 +74,16 @@ test('.wrap', function (t, p) {
   p.value('theValue', 3);
   p.value('multiplier', 2);
   p.wrap('theValue', function (theValue, multiplier) {
-    t.equal(theValue, 3);
-    t.equal(multiplier, 2);
-    return theValue * multiplier;
+    t.equal(multiplier, 2, 'unwrapped values are resolved');
+    t.ok(typeof theValue === 'function', 'wrapped value is a thunk');
+    theValue = theValue();
+    t.ok(typeof theValue.then === 'function', 'the thunk evaluates to a promise');
+    return theValue.then(function (theValue) {
+      t.equal(theValue, 3, 'the wrapped value resolves correctly');
+      return theValue * multiplier;
+    });
   });
+
   return p.get('theValue').then(t.equal.bind(t, 6));
 });
 
@@ -85,9 +91,14 @@ test('.wrap works on lazy values', function (t, p) {
   p.value('theValue', function () { return 8; });
   p.value('multiplier', function () { return 3; });
   p.wrap('theValue', function (theValue, multiplier) {
-    t.equal(theValue, 8);
     t.equal(multiplier, 3);
-    return theValue * multiplier;
+    t.ok(typeof theValue === 'function', 'wrapped value is a thunk');
+    theValue = theValue();
+    t.ok(typeof theValue.then === 'function', 'the thunk evaluates to a promise');
+    return theValue.then(function (theValue) {
+      t.equal(theValue, 8);
+      return theValue * multiplier;
+    });
   });
   return p.get('theValue').then(t.equal.bind(t, 24));
 });
@@ -95,10 +106,10 @@ test('.wrap works on lazy values', function (t, p) {
 test('.wrap can be stacked', function (t, p) {
   p.value('theValue', function () { return 0; });
   p.wrap('theValue', function (theValue) {
-    return theValue + 1;
+    return theValue().then(function (v) { return v + 1; });
   });
   p.wrap('theValue', function (theValue) {
-    return theValue + 1;
+    return theValue().then(function (v) { return v + 1; });
   });
   return p.get('theValue').then(t.equal.bind(t, 2));
 });
