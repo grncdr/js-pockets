@@ -24,12 +24,36 @@ Parse the signature of function to determine it's dependencies, retrieve each of
 
 ## pocket.wrap(name, wrapperFn) -> self
 
-Wrap the named value using `fn`. The wrapper *must* depend on `name`, even if it ignores the value.
+Wrap the named value using `fn`. The wrapper *must* depend on `name`, even if it ignores the value. The value for `name` supplied to the wrapper will be a Promise-returning thunk. E.g.
+
+```
+pocket.value('blah', function () {
+  console.log('evaluating original');
+  return 1;
+});
+pocket.wrap('blah', function (blah) {
+  console.log('evaluating wrapper');
+  return blah().then(function (value) {
+    console.log('evaluated original');
+    return value + 1
+  });
+});
+pocket.get('blah').then(console.log);
+```
+
+The above will output:
+
+```
+evaluating wrapper
+evaluating original
+evaluated original
+2
+```
 
 Throws `TypeError` if:
  - The wrapper is not a function.
  - The name being wrapped is not defined on this pocket.
- - The wrapper function does not depend on the name it is wrapping. For example: `pocket.wrap('request', function (somethingElse) { ... })` is not allowed.
+ - The wrapper function does not depend on the name it is wrapping.
 
 ## pocket.default(name, valueOrFn) -> self
 
