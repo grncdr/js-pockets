@@ -52,7 +52,7 @@ p.get('database').then(function (db) {
 });
 ```
 
-When we call `p.get('database')`, the pocket will call the function we provided to obtain it's value. This also shows the first bit of implicit behaviour: because the function requires a parameter named `config`, the pocket will pass the _resolved_ value of `pocket.get('config')` to the function.
+When we call `p.get('database')`, the pocket will call the function we provided to obtain a value for the name `'database'`. This also shows the first bit of implicit behaviour: because the function requires a parameter named `config`, the pocket will pass the _resolved_ value of `pocket.get('config')` to the function.
 
 ## Result Caching
 
