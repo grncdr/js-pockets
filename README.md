@@ -40,7 +40,7 @@ p.get('config', function (err, config) {
 });
 ```
 
-So far, so boring. To make this a little more interesting, let's set a *lazy* value by passing a function:
+So far, so boring. To make this a little more interesting, let's set a *lazy* value:
 
 ```javascript
 p.value('database', function (config) {
@@ -52,7 +52,7 @@ p.get('database').then(function (db) {
 });
 ```
 
-This also shows the first bit of implicit behaviour: when we call `p.get('database')`, the pocket will see that the function requires a parameter named `config`, and passes the resolved value of `pocket.get('config')` to our function.
+When we call `p.get('database')`, the pocket will call the function we provided to obtain it's value. This also shows the first bit of implicit behaviour: because the function requires a parameter named `config`, the pocket will pass the _resolved_ value of `pocket.get('config')` to the function.
 
 ## Result Caching
 
