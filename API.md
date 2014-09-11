@@ -55,9 +55,6 @@ Throws `TypeError` if:
  - The name being wrapped is not defined on this pocket.
  - The wrapper function does not depend on the name it is wrapping.
 
-## pocket.default(name, valueOrFn) -> self
-
-Define a default value for the pocket, this behaves exactly like `pocket.value(name, valueOrFn)` except the value can be overridden later with `pocket.value`. Prefer to use `pocket.wrap` over this, as this may be deprecated in the future.
 
 ## pocket.alias(name, otherName) -> self
 
