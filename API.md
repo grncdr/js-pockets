@@ -73,3 +73,20 @@ Return a list of names that are depended on by this pocket, but not defined.
 ## pocket.pocket() -> pocket
 
 Return a new pocket that is a child of this one. Child pockets can retrieve dependencies from their parent, but this relationship is one-way.
+
+
+# var signature = require('pockets/signature');
+
+In certain cases you may want to access the signature parsing & annotation functionality of pockets directly.
+
+## signature.parse(fn) -> [String]
+
+Retrieve the parameter names of `fn`. The parameter list will be cached in a hidden property of `fn` itself, so that repeated parsing just retrieves the cached value.
+
+## signature.clobber(fn, names) -> fn
+
+Overwrites the hidden signature property of `fn` such with `names`. `names should be an array of strings, or a falsy value if you wish to clear the cached signature for a function.
+
+## signature.copy(fromFn, toFn) -> toFn
+
+Copy the signature from one function to another, returning the `toFn`. This can be useful when you want to wrap a function while preserving it's original argument list.

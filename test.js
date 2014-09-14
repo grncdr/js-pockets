@@ -2,6 +2,7 @@ var Promise = require('lie');
 var apply = require('lie-apply');
 var cast = require('lie-cast');
 var pocket = require('./');
+var signature = require('./signature');
 var tape = require('blue-tape');
 
 function test (description, body) {
@@ -228,10 +229,17 @@ test('overwrite protection', function (t, p) {
 });
 
 test('signature parsing', function (t) {
-  var parse = require('./signature');
   t.throws(function () {
-    parse('blah');
+    signature.parse('blah');
   }, 'Can only parse functions');
+  t.end();
+});
+
+test('signature copying', function (t) {
+  function source (a, b, c) {}
+  function dest () {}
+  signature.copy(source, dest);
+  t.deepEqual(signature.parse(dest), ['a', 'b', 'c']);
   t.end();
 });
 

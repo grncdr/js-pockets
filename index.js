@@ -2,7 +2,7 @@
 var Promise = require('lie');
 var cast = require('lie-cast');
 var denodify = require('lie-denodify');
-var parseSignature = require('./signature');
+var signature = require('./signature');
 
 module.exports = function createPocket () {
   return pocket();
@@ -18,7 +18,7 @@ function pocket (parent) {
   var allNames = {};
 
   function addNames (fn) {
-    parseSignature(fn).forEach(function (name) {
+    signature.parse(fn).forEach(function (name) {
       allNames[name] = true;
     });
   }
@@ -29,7 +29,7 @@ function pocket (parent) {
     },
 
     run: function (fn, callback) {
-      var params = parseSignature(fn).map(self.get);
+      var params = signature.parse(fn).map(self.get);
       return nodify(callback, Promise.all(params).then(function (params) {
         return fn.apply(self, params);
       }));
@@ -93,8 +93,8 @@ function pocket (parent) {
         throw new TypeError('Cannot wrap undefined value "' + name + '"');
       }
 
-      var signature = parseSignature(fn).map(canonicalize);
-      var position = signature.indexOf(name);
+      var sig = signature.parse(fn).map(canonicalize);
+      var position = sig.indexOf(name);
 
       function wrapper () {
         var args = Array.prototype.slice.call(arguments);
@@ -112,7 +112,7 @@ function pocket (parent) {
         return fn.apply(this, args);
       }
 
-      parseSignature.clobber(wrapper, signature.filter(function (name_) {
+      signature.clobber(wrapper, sig.filter(function (name_) {
         return name_ !== name;
       }));
 
@@ -194,10 +194,10 @@ function registrationFunction (wrapped) {
 
 // Special version of bluebird.promisify that copies the function signature
 function promisify (fn) {
-  var signature = parseSignature(fn).slice();
-  signature.pop();
+  var sig = signature.parse(fn).slice();
+  sig.pop();
   fn = denodify(fn);
-  parseSignature.clobber(fn, signature);
+  signature.clobber(fn, sig);
   return fn;
 }
 
