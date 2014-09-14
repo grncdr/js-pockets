@@ -95,21 +95,20 @@ function pocket (parent) {
 
       var signature = parseSignature(fn).map(canonicalize);
       var position = signature.indexOf(name);
-      if (position < 0) {
-        throw new TypeError('Wrapper must depend on original "' + name + '" value');
-      }
 
       function wrapper () {
         var args = Array.prototype.slice.call(arguments);
 
-        var thunk;
-        if (typeof original === 'function') {
-          thunk = function () { return self.run(original) };
-        } else {
-          thunk = function () { return cast(original); };
+        if (position >= 0) {
+          var thunk;
+          if (typeof original === 'function') {
+            thunk = function () { return self.run(original) };
+          } else {
+            thunk = function () { return cast(original); };
+          }
+          args.splice(0, position, thunk);
         }
-        
-        args.splice(0, position, thunk);
+
         return fn.apply(this, args);
       }
 

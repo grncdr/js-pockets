@@ -24,7 +24,7 @@ Parse the signature of function to determine it's dependencies, retrieve each of
 
 ## pocket.wrap(name, wrapperFn) -> self
 
-Wrap the named value using `fn`. The wrapper *must* depend on `name`, even if it ignores the value. The value for `name` supplied to the wrapper will be a Promise-returning thunk. E.g.
+Wrap the named value using `fn`. The wrapper may depend on `name`, in which case the supplied value for `name` will be a Promise-returning thunk. E.g.
 
 ```
 pocket.value('blah', function () {
@@ -50,10 +50,12 @@ evaluated original
 2
 ```
 
+Take care when wrapping names that your return value is compatible with other
+users of `name`.
+
 Throws `TypeError` if:
  - The wrapper is not a function.
  - The name being wrapped is not defined on this pocket.
- - The wrapper function does not depend on the name it is wrapping.
 
 
 ## pocket.alias(name, otherName) -> self

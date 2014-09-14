@@ -122,12 +122,9 @@ test('.wrap validates arguments', function (t, p) {
   }, 'wrapper function must be a function');
 
   t.throws(function () {
-    p.wrap('someOtherValue', function (original) {});
+    p.wrap('someOtherValue', function () {});
   }, 'wrapper must wrap a known name');
 
-  t.throws(function () {
-    p.wrap('theValue', function () {});
-  }, 'wrapper must depend on "original"');
   t.end();
 });
 
