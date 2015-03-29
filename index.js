@@ -106,7 +106,7 @@ function pocket (parent) {
           } else {
             thunk = function () { return cast(original); };
           }
-          args.splice(0, position, thunk);
+          args.splice(position, 0, thunk);
         }
 
         return fn.apply(this, args);

@@ -74,7 +74,7 @@ test('.value', function (t, p) {
 test('.wrap', function (t, p) {
   p.value('theValue', 3);
   p.value('multiplier', 2);
-  p.wrap('theValue', function (theValue, multiplier) {
+  p.wrap('theValue', function (multiplier, theValue) {
     t.equal(multiplier, 2, 'unwrapped values are resolved');
     t.ok(typeof theValue === 'function', 'wrapped value is a thunk');
     theValue = theValue();
