@@ -1,6 +1,6 @@
 # pockets
 
-![build-status](https://travis-ci.org/grncdr/js-pockets.svg?branch=master)
+[![build-status](https://travis-ci.org/grncdr/js-pockets.svg?branch=master)](https://travis-ci.org/grncdr/js-pockets)
 _Builds don't pass without 100% test coverage_
 
 Can't remember where you left something in your app? Check your pockets.
