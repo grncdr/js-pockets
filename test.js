@@ -149,6 +149,35 @@ test('.missingNames', function (t, p) {
   t.end();
 });
 
+test('.dependencyTree', function (t, parent) {
+  var child = parent.pocket();
+  parent.value('a', 'hello')
+
+  parent.value('b', function (a) {
+    return 'b(' + JSON.stringify(a) + ')';
+  })
+
+  child.value('c', function (b) {
+    return 'c(' + JSON.stringify(b) + ')';
+  })
+
+  child.value('d', function (thisIsMissing) {});
+
+  var expected = {};
+  expected.a = [];
+  expected.b = ['a'];
+
+  t.deepEqual(expected, parent.dependencies());
+
+  expected.c = ['b'];
+  expected.d = ['thisismissing'];
+
+  t.deepEqual(expected, child.dependencies());
+
+  // so code coverage doesn't complain
+  return child.get('c').then(t.equal.bind(t, 'c("b(\\"hello\\")")'));
+});
+
 test('value caching', function (t, p) {
   var providerExecutionCount = 0;
   var myThing = {};
@@ -180,7 +209,7 @@ test('parent/child relationships', function (t, p) {
   });
 });
 
-test('granchildren can get deps from their grandparents', function (t, gp) {
+test('grandchildren can get deps from their grandparents', function (t, gp) {
   gp.value('five', function () { return 5 });
   var parent = gp.pocket();
   var child = parent.pocket();

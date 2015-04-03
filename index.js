@@ -4,9 +4,14 @@ var cast = require('lie-cast');
 var denodify = require('lie-denodify');
 var signature = require('./signature');
 
+var keys = Object.keys;
+var Missing = Object.freeze({__missing__: true});
+
 module.exports = function createPocket () {
   return pocket();
 };
+
+module.exports.Missing = Missing
 
 function pocket (parent) {
   // mapping of names to lazy value functions, these functions may return
@@ -16,11 +21,21 @@ function pocket (parent) {
   var values = {};
   var defaults = {};
   var allNames = {};
+  var dependencies = {};
 
   function addNames (fn) {
     signature.parse(fn).forEach(function (name) {
       allNames[name] = true;
     });
+  }
+
+  function setDependencies (name, it) {
+    name = canonicalize(name);
+    if (typeof it === 'function') {
+      dependencies[name] = signature.parse(it).map(canonicalize);
+    } else {
+      dependencies[name] = [];
+    }
   }
 
   var self = {
@@ -51,14 +66,14 @@ function pocket (parent) {
         return nodify(callback, values[name]);
       }
 
-      var fn = lazy[name] || defaults[name];
-      if (typeof fn === 'function') {
-        values[name] = nodify(callback, self.run(fn));
+      var it = lazy[name] || defaults[name];
+      if (typeof it === 'function') {
+        values[name] = nodify(callback, self.run(it));
         return values[name];
       }
-      else if (fn !== void 0) {
-        // fn is a concrete default value
-        values[name] = nodify(callback, cast(fn));
+      else if (it !== void 0) {
+        // it is a concrete default value
+        values[name] = nodify(callback, cast(it));
         return values[name];
       }
 
@@ -80,6 +95,7 @@ function pocket (parent) {
       } else {
         values[name] = cast(value);
       }
+      setDependencies(name, value);
       return self;
     }),
 
@@ -129,6 +145,9 @@ function pocket (parent) {
       if (typeof value === 'function') {
         addNames(value);
       }
+      if (!dependencies[name]) {
+        setDependencies(name, value);
+      }
       defaults[name] = value;
       return self;
     }),
@@ -154,9 +173,22 @@ function pocket (parent) {
     },
 
     missingNames: function () {
-      return (parent ? parent.missingNames() : [])
-        .concat(Object.keys(allNames))
-        .filter(not(self.has));
+      var deps = this.dependencies();
+      var missing = [];
+      for (var name in deps) {
+        missing = missing.concat(deps[name].filter(not(self.has)));
+      }
+      return missing;
+    },
+
+    dependencies: function () {
+      var tree = parent ? parent.dependencies() : {};
+
+      for (var name in dependencies) {
+        tree[name] = dependencies[name].slice()
+      }
+
+      return tree;
     }
   };
 
