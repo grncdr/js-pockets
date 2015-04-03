@@ -1,6 +1,6 @@
 {
   "name": "pockets",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "Implicit-magic asynchronous and nested DI containers",
   "main": "index.js",
   "dependencies": {
