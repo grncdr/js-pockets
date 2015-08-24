@@ -68,15 +68,15 @@ p.value('sideEffectingValue', function () {
   return {value: invocationCount};
 });
 
-apply(assertions, p.get('sideEffectingValue'), p.get('sideEffectingValue'));
-
 function assertions (v1, v2) {
   assert.strictEqual(v1, v2); // These are the exact same object.
   assert.strictEqual(invocationCount, 1);
 }
+
+apply(assertions, p.get('sideEffectingValue'), p.get('sideEffectingValue'));
 ```
 
-If you want to evaluate code that depends on lazy values without caching the result, use `pocket.run`:
+If you want to run a function that depends on lazy values _without_ caching its result, use `pocket.run`:
 
 ```javascript
 p.run(function (config, database) {
@@ -88,7 +88,7 @@ You can think of `.run` as being a way to "enter" the pocket and `.then` as the 
 
 ## Minimal Interface
 
-An important property of `pockets` is that *none of the functions we're writing depend on them*.  They're just a normal functions that accept parameters and return a value or promise ([or take a callback][node-style]). In a larger application these functions would be defined in separate modules that can be tested in isolation without having to use `pockets` at all.
+An important property of `pockets` is that *none of the functions we're writing depend on `pockets`*.  They're just a normal functions that accept parameters and return a value or promise ([or take a callback][node-style]). In a larger application these functions would be defined in separate modules that can be tested in isolation without having to use `pockets` at all.
 
 Furthermore, we write very little `.then(...)` or callback boilerplate in our functions, because `pockets` takes care of sequencing the dependencies for us.
 
@@ -114,7 +114,7 @@ parent.get('two').catch(function (err) {
 });
 ```
 
-This can be particularly useful for implementing a "unit-of-work" pattern for web servers, where every request can have an isolated `pocket` that extends an application-wide pocket with request-specific data.
+This can be particularly useful for implementing a "unit-of-work" pattern for web servers, where every request can have an isolated `pocket` that extends an application-wide pocket with request-specific data. If that interests you, check out [web-pockets](https://github.com/grncdr/web-pockets).
 
 ## Using Node-style callback functions
 
@@ -152,6 +152,8 @@ Names are *canonicalized* when registering or retrieving objects from a pocket. 
  1. The name is lower-cased
  2. The prefixes `get`, `load`, and `create` are removed if present.
  3. Any non-word characters (underscores, dollar-signs, etc.) are also removed.
+
+So these names are all equivalent: `get_user`, `User`, `loadUser`, `CREATE_USER`.
 
 ## Acknowledgements
 
