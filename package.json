@@ -4,19 +4,17 @@
   "description": "Implicit-magic asynchronous and nested DI containers",
   "main": "index.js",
   "dependencies": {
-    "hat": "^0.0.3",
-    "lie": "^2.7.7",
-    "lie-cast": "^0.2.1",
-    "lie-denodify": "^0.3.0"
+    "hat": "^0.0.3"
   },
   "devDependencies": {
     "blue-tape": "^0.1.6",
     "covert": "^0.4.0",
     "lie-apply": "^0.1.0",
-    "markdown-code-blocks": "0.0.1"
+    "markdown-code-blocks": "0.0.1",
+    "standard": "^5.3.1"
   },
   "scripts": {
-    "test": "covert test.js && markdown-code-blocks -t javascript < README.md | node"
+    "test": "standard *.js && covert test.js && markdown-code-blocks -t javascript < README.md | node"
   },
   "author": "Stephen Sugden <me@stephensugden.com>",
   "license": "MIT"
