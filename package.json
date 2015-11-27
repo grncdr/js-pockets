@@ -7,7 +7,7 @@
     "hat": "0.0.3"
   },
   "devDependencies": {
-    "blue-tape": "0.1.10",
+    "blue-tape": "0.1.11",
     "covert": "0.4.0",
     "lie-apply": "0.1.0",
     "markdown-code-blocks": "0.0.1",
