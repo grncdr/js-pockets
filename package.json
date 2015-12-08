@@ -8,7 +8,7 @@
   },
   "devDependencies": {
     "blue-tape": "0.2.0",
-    "covert": "0.4.0",
+    "covert": "1.1.0",
     "lie-apply": "0.1.0",
     "markdown-code-blocks": "0.0.1",
     "standard": "6.0.3"
