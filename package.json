@@ -11,7 +11,7 @@
     "covert": "1.1.0",
     "lie-apply": "0.1.0",
     "markdown-code-blocks": "0.0.1",
-    "standard": "6.0.4"
+    "standard": "7.1.0"
   },
   "scripts": {
     "test": "standard *.js && covert test.js && markdown-code-blocks -t javascript < README.md | node"
